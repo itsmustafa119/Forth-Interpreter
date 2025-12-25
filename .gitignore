@@ -1,0 +1,14 @@
+# Compiled executable
+main
+
+# Object files
+*.o
+
+# Debug files
+*.out
+*.exe
+
+# Editor / OS files
+.vscode/
+.idea/
+.DS_Store
