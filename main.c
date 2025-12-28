@@ -140,7 +140,7 @@ char *doubleToString(double value) {            //Converts double number to Stri
     return str;
 }
 
-bool lineProcessing(char * tokens[50], Stack *stack, HashMap *map, char line[100]){
+bool lineProcessing(char * tokens[50], Stack *stack, HashMap *map, char line[100], bool recursiveCall) {
     int index = 0;
     double number, operand1, operand2, operand3 = 0;
     char outputLine[1024] = "";  // Initialize outputLine as an empty string.
@@ -153,20 +153,26 @@ bool lineProcessing(char * tokens[50], Stack *stack, HashMap *map, char line[100
         }
         else {
             char *definition = get(map, tokens[index]);
+            char *definitionCopy = NULL;
             if(definition != NULL){
+                definitionCopy = malloc(strlen(definition) + 1);
+                strcpy(definitionCopy, definition);
+            }
+            if(definitionCopy != NULL){
                 char *defTokens[50] = {NULL};
                 int defIndex = 0;
-                char *defToken = strtok(definition, " ");
+                char *defToken = strtok(definitionCopy, " ");
                 while(defToken != NULL) {
                     defTokens[defIndex] = malloc(strlen(defToken) + 1);
                     strcpy(defTokens[defIndex], defToken);
                     defToken = strtok(NULL, " ");
                     defIndex++;
+
                 }
                 defTokens[defIndex] = NULL; // Null-terminate the array of tokens.
-
                 // Recursively process the definition tokens.
-                lineProcessing(defTokens, stack, map, line);
+                lineProcessing(defTokens, stack, map, line, recursiveCall);
+                recursiveCall = true;
 
                 // Free the allocated memory for definition tokens.
                 for (int i = 0; i < defIndex; i++) {
@@ -230,6 +236,7 @@ bool lineProcessing(char * tokens[50], Stack *stack, HashMap *map, char line[100
                 push(stack, operand3);
             }
             else if(strcmp(tokens[index], "mod") == 0) {
+                printf("\ntest\n\n");
                 operand1 = pop(stack);
                 operand2 = pop(stack);
                 push(stack, (double)((int)operand2 % (int)operand1));
@@ -243,14 +250,18 @@ bool lineProcessing(char * tokens[50], Stack *stack, HashMap *map, char line[100
                     index++;
                 }
                 else {
+                    int ifBodyIndex = 0;
                     char* ifBody[50] = {NULL};
+                    index++;
                     while(strcmp(tokens[index], "then") != 0) {
-                        ifBody[index] = malloc(strlen(tokens[index]) + 1);
-                        strcpy(ifBody[index], tokens[index]);
+                        ifBody[ifBodyIndex] = malloc(strlen(tokens[index]) + 1);
+                        strcpy(ifBody[ifBodyIndex], tokens[index]);
+                        ifBodyIndex++;
                         index++;
                     }
-                    lineProcessing(ifBody, stack, map, line);
-                    for (int i = 0; i < index; i++) {
+                    lineProcessing(ifBody, stack, map, line, recursiveCall);
+                    recursiveCall = true;
+                    for (int i = 0; i < ifBodyIndex; i++) {
                         free(ifBody[i]);
                         ifBody[i] = NULL;
                     }
@@ -293,6 +304,7 @@ bool lineProcessing(char * tokens[50], Stack *stack, HashMap *map, char line[100
                 strncat(outputLine, "\n", sizeof(outputLine) - strlen(outputLine) - 1);
             }
             else if(strcmp(tokens[index], ".\"") == 0) {
+                
                 index++;
                 while(strcmp(tokens[index], "\"") != 0) {
                     strncat(outputLine, tokens[index], sizeof(outputLine) - strlen(outputLine) - 1);
@@ -351,7 +363,9 @@ bool lineProcessing(char * tokens[50], Stack *stack, HashMap *map, char line[100
         index++;
         
     }
+    if(!recursiveCall) {
     printf("\033[A\r%s %s  ok\n", line, outputLine);      //Printing the transparent message ending with ok.
+    }
     return true;
 }
 int main() {
@@ -379,7 +393,7 @@ int main() {
         }
 
         
-        if(!lineProcessing(tokens, &stack, &map, tempLine)){
+        if(!lineProcessing(tokens, &stack, &map, tempLine, false)){
             break;
         };
 
