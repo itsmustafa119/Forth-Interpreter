@@ -236,15 +236,34 @@ bool lineProcessing(char * tokens[50], Stack *stack, HashMap *map, char line[100
                 push(stack, operand3);
             }
             else if(strcmp(tokens[index], "mod") == 0) {
-                printf("\ntest\n\n");
+                
                 operand1 = pop(stack);
                 operand2 = pop(stack);
                 push(stack, (double)((int)operand2 % (int)operand1));
             }
             else if( strcmp(tokens[index], "if") == 0) {
                 operand1 = pop(stack);
+                
                 if(operand1 == 0) {
                     while(strcmp(tokens[index], "then") != 0) {
+                        if(strcmp(tokens[index], "else") == 0) {
+                            index++;
+                            int elseBodyIndex = 0;
+                            char* elseBody[50] = {NULL};
+                            while(strcmp(tokens[index], "then") != 0) {
+                                elseBody[elseBodyIndex] = malloc(strlen(tokens[index]) + 1);
+                                strcpy(elseBody[elseBodyIndex], tokens[index]);
+                                elseBodyIndex++;
+                                index++;
+                            }
+                            lineProcessing(elseBody, stack, map, line, recursiveCall);
+                            recursiveCall = true;
+                            for (int i = 0; i < elseBodyIndex; i++) {
+                                free(elseBody[i]);
+                                elseBody[i] = NULL;
+                            }
+                            break;
+                        }
                         index++;
                     }
                     index++;
@@ -253,7 +272,7 @@ bool lineProcessing(char * tokens[50], Stack *stack, HashMap *map, char line[100
                     int ifBodyIndex = 0;
                     char* ifBody[50] = {NULL};
                     index++;
-                    while(strcmp(tokens[index], "then") != 0) {
+                    while(strcmp(tokens[index], "else") != 0 && strcmp(tokens[index], "then") != 0) {
                         ifBody[ifBodyIndex] = malloc(strlen(tokens[index]) + 1);
                         strcpy(ifBody[ifBodyIndex], tokens[index]);
                         ifBodyIndex++;
@@ -270,6 +289,30 @@ bool lineProcessing(char * tokens[50], Stack *stack, HashMap *map, char line[100
                 }
 
 
+            }
+            else if(strcmp(tokens[index], "do") == 0) {
+                operand1 = pop(stack); //start of the loop
+                operand2 = pop(stack); //end of the loop
+                int loopBodyIndex = 0;
+                char* loopBody[50] = {NULL};
+                index++;
+                index++;
+                while(strcmp(tokens[index], "loop") != 0) {
+                    loopBody[loopBodyIndex] = malloc(strlen(tokens[index]) + 1);
+                    strcpy(loopBody[loopBodyIndex], tokens[index]);
+                    loopBodyIndex++;
+                    index++;
+                }
+                for(int i = (int)operand1; i < (int)operand2; i++) {
+                    push(stack, (double)i);
+                    lineProcessing(loopBody, stack, map, line, recursiveCall);
+                }
+                recursiveCall = true;
+                for (int i = 0; i < loopBodyIndex; i++) {
+                    free(loopBody[i]);
+                    loopBody[i] = NULL;
+                }
+                index++;
             }
             else if(strcmp(tokens[index], ":") == 0) {
                 index++;
